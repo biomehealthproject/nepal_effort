@@ -1,6 +1,5 @@
 library(dplyr)
 
-
 all_cams<-read.csv("Surevey_effort_30minthreshold.csv", stringsAsFactors = FALSE)
 
 species<-read.csv("time_diff_species.csv", stringsAsFactors = FALSE)
@@ -8,7 +7,6 @@ species<-read.csv("time_diff_species.csv", stringsAsFactors = FALSE)
 #replacing 0s with NAs - NAs indicate when the cameras were not on
 #We want to build a matrix for each species where 1 = species detected, 0 = camera on but species not detected, NA =camera not on
 all_cams[all_cams == 0]<-NA
-
 
 sp_dates<-species %>% 
   select(CommonName,site_cam.x ,date_fixed) %>% 
@@ -25,7 +23,7 @@ all_cams<-all_cams[,-no_sp+1] #getting rid of columns with cameras with no sp de
 d<-sp_dates
 colnames(d)<-c("Species", "Site", "DateTime")
 
-calcOcc <- function(d, timeStep, species, startDate = as.Date("2019-03-15"), endDate = as.Date("2019-04-15")){
+calcOcc <- function(species,d = d, timeStep = 1,  startDate = as.Date("2019-03-15"), endDate = as.Date("2019-04-15")){
 
   # Make a vector of breaks ###Can we specify different start dates for different points?
   brks <- seq(startDate, endDate, by = paste(timeStep, 'day') )
@@ -49,7 +47,6 @@ calcOcc <- function(d, timeStep, species, startDate = as.Date("2019-03-15"), end
   
   for(s in unique(d$Site)){
     seen <- NA
-    anySurvey <- NA
     
     captures <- d$DateTime[d$Species == species & d$Site == s]
     
@@ -62,15 +59,23 @@ calcOcc <- function(d, timeStep, species, startDate = as.Date("2019-03-15"), end
     end <- endDate
     
     # If the species was seen, occ = 1
-    occ[unique(d$Site) == s, seen] <- 1 
+    
+    col_i<-which(colnames(occ) == s)
+    occ[seen,col_i] <- 1 
     
     occ<-occ*all_cams[,2:ncol(all_cams)]
     
+    paste0(species, " done!")
+    species_name<-gsub(" ", "", species)
+    row.names(occ)<-brksLong 
+    write.csv(occ, here::here("matrices_out",paste0(species_name, "_tt_effort.csv")))
+    
+      #print(s)
           }
   return(occ)
-  
+
+      
 }
 
-
-calcOcc(d, 1, "Chital")
+lapply(X = unique(species$CommonName),FUN = calcOcc,d = d, timeStep = 1,  startDate = as.Date("2019-03-15"), endDate = as.Date("2019-04-15"))
 
