@@ -30,15 +30,8 @@ calcOcc <- function(species,d = d, timeStep = 1,  startDate = as.Date("2019-03-1
   brks <- brks[-length(brks)]
   
   # Breaks with final end date as well.
-  #86400=number of seconds in a day
   brksLong <- c(brks, brks[length(brks)] + timeStep)
-  
-  
-  # If the data are an exact multiple
-  # brks <- seq(startDate, max(d$`survey end`), by = paste(timeStep, 'day') )
-  # brksLong <- c(brks, max(d$`survey end`))
-  
-  
+
   # Create an empty matrix of dim sites x time periods
   occ <- matrix(0, nrow = length(unique(d$Site)), ncol = length(brksLong))
   rownames(occ) <- sort(unique(d$Site))
@@ -47,14 +40,10 @@ calcOcc <- function(species,d = d, timeStep = 1,  startDate = as.Date("2019-03-1
   
   for(s in unique(d$Site)){
     seen <- NA
-    
     captures <- d$DateTime[d$Species == species & d$Site == s]
     
     # Were animals seen at the site
     seen <- brksLong %in% captures
-    
-    # Was there a camera at the site?
-    # Find start and end times for surveys
     st <- startDate 
     end <- endDate
     
@@ -62,15 +51,13 @@ calcOcc <- function(species,d = d, timeStep = 1,  startDate = as.Date("2019-03-1
     
     col_i<-which(colnames(occ) == s)
     occ[seen,col_i] <- 1 
-    
     occ<-occ*all_cams[,2:ncol(all_cams)]
     
     paste0(species, " done!")
     species_name<-gsub(" ", "", species)
     row.names(occ)<-brksLong 
     write.csv(occ, here::here("matrices_out",paste0(species_name, "_tt_effort.csv")))
-    
-      #print(s)
+
           }
   return(occ)
 
