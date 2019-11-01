@@ -22,7 +22,7 @@ no_sp <-
   which(!colnames(all_cams)[2:ncol(all_cams)] %in% unique(sp_dates$site_cam.x)) #which cams are these?
 
 all_cams <-
-  all_cams[,-no_sp + 1] #getting rid of columns with cameras with no sp detections
+  all_cams[, -no_sp + 1] #getting rid of columns with cameras with no sp detections
 
 
 d <- sp_dates
@@ -98,41 +98,46 @@ calcOcc(
 #####This section for compressing the matrices into difference time chunks####
 
 
-chital <- read.csv(here::here("matrices_out", "Chital_tt_effort.csv"))
+chital <-
+  read.csv(here::here("matrices_out", "Chital_tt_effort.csv"))
 
 row.names(chital) <- chital$X
 
-chital <- chital[, -1]
+chital <- chital[,-1]
 
 #na_mode = "include" means that NAs will effectively be treated as zeros.
 #if na_mode = anything apart from "include" an NA in a time step will count the whole timestep as NA
 
-#have just done an example with the Chital data but could set it up as above to create for all sp. 
+#have just done an example with the Chital data but could set it up as above to create for all sp.
 
 timestepper <- function(occ_in, timestep, na_mode = "include") {
   if (na_mode == "include") {
     occ_in[is.na(occ_in)] <- 0
   }
   
-  start <- seq(1, nrow(occ_in), by = timestep)
-  end <- seq(timestep, nrow(occ_in), by = timestep)
-  
-  if (length(start) > length(end)) {
-    start <- start[-length(start)]
+  if (timestep > nrow(occ_in) / 2) {
+    print(paste("Time step is too large! Please reduce to at least",nrow(occ_in) / 2 ))
+  } else {
+    start <- seq(1, nrow(occ_in), by = timestep)
+    end <- seq(timestep, nrow(occ_in), by = timestep)
+    
+    if (length(start) > length(end)) {
+      start <- start[-length(start)]
+    }
+    
+    timesteps <- matrix(nrow = length(start), ncol = ncol(occ_in))
+    colnames(timesteps) <- colnames(occ_in)
+    rownames(timesteps) <-
+      paste(rownames(occ)[start], rownames(occ_in)[end], sep = ":")
+    
+    for (i in 1:length(start)) {
+      timestep_out <- colSums(occ_in[start[i]:end[i],])
+      timesteps[i,] <- timestep_out
+      timesteps[timesteps > 0] <- 1
+    }
+    
+    return(timesteps)
   }
-  
-  timesteps <- matrix(nrow = length(start), ncol = ncol(occ_in))
-  colnames(timesteps) <- colnames(occ_in)
-  rownames(timesteps) <-
-    paste(rownames(occ)[start], rownames(occ_in)[end], sep = ":")
-  
-  for (i in 1:length(start)) {
-    timestep_out <- colSums(occ_in[start[i]:end[i], ])
-    timesteps[i, ] <- timestep_out
-    timesteps[timesteps > 0] <- 1
-  }
-  
-  return(timesteps)
   
 }
 
@@ -144,4 +149,3 @@ timestepper(occ_in = chital,
 timestepper(occ_in = chital,
             timestep = 4,
             na_mode = "exclude")
-
