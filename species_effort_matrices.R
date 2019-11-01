@@ -3,7 +3,7 @@ library(dplyr)
 all_cams <-
   read.csv("Surevey_effort_30minthreshold.csv", stringsAsFactors = FALSE)
 
-species <- read.csv("time_diff_species.csv", stringsAsFactors = FALSE)
+species <- read.csv("Latest_species_meta.csv", stringsAsFactors = FALSE)
 
 #replacing 0s with NAs - NAs indicate when the cameras were not on
 #We want to build a matrix for each species where 1 = species detected, 0 = camera on but species not detected, NA =camera not on
@@ -14,7 +14,7 @@ sp_dates <- species %>%
   arrange(CommonName) %>%
   distinct()
 
-sp_dates$date_fixed <- as.Date(sp_dates$date_fixed)
+sp_dates$date_fixed <- as.Date(sp_dates$date_fixed, format = "%d/%m/%Y")
 
 no_sp <-
   which(!colnames(all_cams)[2:ncol(all_cams)] %in% unique(sp_dates$site_cam.x)) #which cams are these?
@@ -80,3 +80,29 @@ lapply(
   startDate = as.Date("2019-03-15"),
   endDate = as.Date("2019-04-15")
 )
+
+
+
+occ<-read.csv(here::here("matrices_out", "Chital_tt_effort.csv"))
+
+row.names(occ)<-occ$X
+
+occ<-occ[,-1]
+
+piv_occ<-t(occ)
+
+
+#na_mode = "include" means that NAs will effectively be treated as zeros. 
+#na_mode = "exclude" means that an NA in a time step will count the whole timestep as NA
+
+function(timestep, na_mode = "include"){
+  
+  
+  
+}
+
+
+
+
+
+
