@@ -22,7 +22,7 @@ no_sp <-
   which(!colnames(all_cams)[2:ncol(all_cams)] %in% unique(sp_dates$site_cam.x)) #which cams are these?
 
 all_cams <-
-  all_cams[,-no_sp + 1] #getting rid of columns with cameras with no sp detections
+  all_cams[, -no_sp + 1] #getting rid of columns with cameras with no sp detections
 
 
 d <- sp_dates
@@ -33,11 +33,9 @@ calcOcc <-
            d = d,
            startDate = as.Date("2019-03-15"),
            endDate = as.Date("2019-04-15")) {
-    # Make a vector of breaks ###Can we specify different start dates for different points?
+    # Make a vector of breaks 
     brks <- seq(startDate, endDate, by = "day")
     brks <- brks[-length(brks)]
-    
-    # Breaks with final end date as well.
     brksLong <- c(brks, brks[length(brks)] + timeStep)
     
     # Create an empty matrix of dim sites x time periods
@@ -45,7 +43,6 @@ calcOcc <-
       matrix(0, nrow = length(unique(d$Site)), ncol = length(brksLong))
     rownames(occ) <- sort(unique(d$Site))
     colnames(occ) <- strftime(brksLong, format = "%Y-%m-%d")
-    
     
     for (s in unique(d$Site)) {
       seen <- NA
@@ -85,7 +82,7 @@ lapply(
   endDate = as.Date("2019-04-15")
 )
 
-#If you just want it for one use this:
+#If you just want it for one species use this:
 
 calcOcc(
   species = "Chital",
@@ -103,7 +100,7 @@ chital <-
 
 row.names(chital) <- chital$X
 
-chital <- chital[, -1]
+chital <- chital[,-1]
 
 #na_mode = "include" means that NAs will effectively be treated as zeros.
 #if na_mode = anything apart from "include" an NA in a time step will count the whole timestep as NA
@@ -112,7 +109,7 @@ chital <- chital[, -1]
 
 timestepper <- function(occ_in, timestep, na_mode = "include") {
   if (na_mode == "include") {
-    occ_in[is.na(occ_in)] <- 0
+    occ_in[is.na(occ_in)] <- 0   #replacing NAs with 0s if we want to include them in analysis.
   }
   
   if (timestep > nrow(occ_in) / 2) {
@@ -135,8 +132,8 @@ timestepper <- function(occ_in, timestep, na_mode = "include") {
       paste(rownames(occ)[start], rownames(occ_in)[end], sep = ":")
     
     for (i in 1:length(start)) {
-      timestep_out <- colSums(occ_in[start[i]:end[i], ])
-      timesteps[i, ] <- timestep_out
+      timestep_out <- colSums(occ_in[start[i]:end[i],])
+      timesteps[i,] <- timestep_out
       timesteps[timesteps > 0] <- 1
     }
     
