@@ -95,11 +95,22 @@ piv_occ<-t(occ)
 #na_mode = "include" means that NAs will effectively be treated as zeros. 
 #na_mode = "exclude" means that an NA in a time step will count the whole timestep as NA
 
-function(timestep, na_mode = "include"){
+timestepper<-function(piv_occ, timestep, na_mode = "include"){
   
+  start <- seq(1, ncol(piv_occ), by = timestep)
+  end <-seq(timestep, ncol(piv_occ), by = timestep)
+ #end[length(end)]<-ncol(piv_occ)
   
+  if (length(start) > length(end)){
+    start<-start[-length(start)]
+    }
   
-}
+  print(start)
+  print(end)
+  
+  }
+
+timestepper(piv_occ = piv_occ, timestep = 10)
 
 
 
