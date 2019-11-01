@@ -116,7 +116,7 @@ timestepper <- function(occ_in, timestep, na_mode = "include") {
   }
   
   if (timestep > nrow(occ_in) / 2) {
-    print(paste("Time step is too large! Please reduce to at least",nrow(occ_in) / 2 ))
+    print(paste("Time step is too large! Please reduce to",nrow(occ_in) / 2 , "or less."))
   } else {
     start <- seq(1, nrow(occ_in), by = timestep)
     end <- seq(timestep, nrow(occ_in), by = timestep)
