@@ -3,7 +3,8 @@ library(dplyr)
 all_cams <-
   read.csv("Surevey_effort_30minthreshold.csv", stringsAsFactors = FALSE)
 
-species <- read.csv("Latest_species_meta.csv", stringsAsFactors = FALSE)
+species <-
+  read.csv("Latest_species_meta.csv", stringsAsFactors = FALSE)
 
 #replacing 0s with NAs - NAs indicate when the cameras were not on
 #We want to build a matrix for each species where 1 = species detected, 0 = camera on but species not detected, NA =camera not on
@@ -14,13 +15,14 @@ sp_dates <- species %>%
   arrange(CommonName) %>%
   distinct()
 
-sp_dates$date_fixed <- as.Date(sp_dates$date_fixed, format = "%d/%m/%Y")
+sp_dates$date_fixed <-
+  as.Date(sp_dates$date_fixed, format = "%d/%m/%Y")
 
 no_sp <-
   which(!colnames(all_cams)[2:ncol(all_cams)] %in% unique(sp_dates$site_cam.x)) #which cams are these?
 
 all_cams <-
-  all_cams[, -no_sp + 1] #getting rid of columns with cameras with no sp detections
+  all_cams[,-no_sp + 1] #getting rid of columns with cameras with no sp detections
 
 
 d <- sp_dates
@@ -29,11 +31,10 @@ colnames(d) <- c("Species", "Site", "DateTime")
 calcOcc <-
   function(species,
            d = d,
-           timeStep = 1,
            startDate = as.Date("2019-03-15"),
            endDate = as.Date("2019-04-15")) {
     # Make a vector of breaks ###Can we specify different start dates for different points?
-    brks <- seq(startDate, endDate, by = paste(timeStep, 'day'))
+    brks <- seq(startDate, endDate, by = "day")
     brks <- brks[-length(brks)]
     
     # Breaks with final end date as well.
@@ -64,7 +65,9 @@ calcOcc <-
       paste0(species, " done!")
       species_name <- gsub(" ", "", species)
       row.names(occ) <- brksLong
-      write.csv(occ, here::here("matrices_out", paste0(species_name, "_tt_effort.csv")))
+      if (!file.exists(here::here("matrices_out", paste0(species_name, "_tt_effort.csv")))) {
+        write.csv(occ, here::here("matrices_out", paste0(species_name, "_tt_effort.csv")))
+      }
       
     }
     return(occ)
@@ -72,48 +75,67 @@ calcOcc <-
     
   }
 
+# This lapply function will create a effort matrix for each species
+
 lapply(
   X = unique(species$CommonName),
   FUN = calcOcc,
   d = d,
-  timeStep = 1,
+  startDate = as.Date("2019-03-15"),
+  endDate = as.Date("2019-04-15")
+)
+
+#If you just want it for one use this:
+
+calcOcc(
+  species = "Chital",
+  d = d,
   startDate = as.Date("2019-03-15"),
   endDate = as.Date("2019-04-15")
 )
 
 
-
-occ<-read.csv(here::here("matrices_out", "Chital_tt_effort.csv"))
-
-row.names(occ)<-occ$X
-
-occ<-occ[,-1]
-
-piv_occ<-t(occ)
+#####This section for compressing the matrices into difference time chunks####
 
 
-#na_mode = "include" means that NAs will effectively be treated as zeros. 
-#na_mode = "exclude" means that an NA in a time step will count the whole timestep as NA
+chital <- read.csv(here::here("matrices_out", "Chital_tt_effort.csv"))
 
-timestepper<-function(piv_occ, timestep, na_mode = "include"){
-  
-  start <- seq(1, ncol(piv_occ), by = timestep)
-  end <-seq(timestep, ncol(piv_occ), by = timestep)
- #end[length(end)]<-ncol(piv_occ)
-  
-  if (length(start) > length(end)){
-    start<-start[-length(start)]
-    }
-  
-  print(start)
-  print(end)
-  
+row.names(chital) <- chital$X
+
+chital <- chital[, -1]
+
+#na_mode = "include" means that NAs will effectively be treated as zeros.
+#if na_mode = anything apart from "include" an NA in a time step will count the whole timestep as NA
+
+#have just done an example with the Chital data but could set it up as above to create for all sp. 
+
+timestepper <- function(occ_in, timestep, na_mode = "include") {
+  if (na_mode == "include") {
+    occ_in[is.na(occ_in)] <- 0
   }
+  
+  start <- seq(1, nrow(occ_in), by = timestep)
+  end <- seq(timestep, nrow(occ_in), by = timestep)
+  
+  if (length(start) > length(end)) {
+    start <- start[-length(start)]
+  }
+  
+  timesteps <- matrix(nrow = length(start), ncol = ncol(occ_in))
+  colnames(timesteps) <- colnames(occ_in)
+  rownames(timesteps) <-
+    paste(rownames(occ)[start], rownames(occ_in)[end], sep = ":")
+  
+  for (i in 1:length(start)) {
+    timestep_out <- colSums(occ_in[start[i]:end[i], ])
+    timesteps[i, ] <- timestep_out
+    timesteps[timesteps > 0] <- 1
+  }
+  
+  return(timesteps)
+  
+}
 
-timestepper(piv_occ = piv_occ, timestep = 10)
-
-
-
-
-
-
+timestepper(occ_in = chital,
+            timestep = 10,
+            na_mode = "includecgbarg")
