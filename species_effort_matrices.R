@@ -137,5 +137,11 @@ timestepper <- function(occ_in, timestep, na_mode = "include") {
 }
 
 timestepper(occ_in = chital,
-            timestep = 10,
-            na_mode = "includecgbarg")
+            timestep = 4,
+            na_mode = "include")
+
+
+timestepper(occ_in = chital,
+            timestep = 4,
+            na_mode = "exclude")
+
