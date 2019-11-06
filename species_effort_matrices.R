@@ -18,11 +18,12 @@ sp_dates <- species %>%
 sp_dates$date_fixed <-
   as.Date(sp_dates$date_fixed, format = "%d/%m/%Y")
 
-no_sp <-
-  which(!colnames(all_cams)[2:ncol(all_cams)] %in% unique(sp_dates$site_cam.x)) #which cams are these?
+# no_sp <-
+#   which(!colnames(all_cams)[2:ncol(all_cams)] %in% unique(sp_dates$site_cam.x)) #which cams are these?
 
-all_cams <-
-  all_cams[, -no_sp + 1] #getting rid of columns with cameras with no sp detections
+
+all_cams<-all_cams %>% 
+  select(-c("OBZ03", "OBZ12")) #getting rid of columns with cameras with no sp detections
 
 
 d <- sp_dates
@@ -36,7 +37,7 @@ calcOcc <-
     # Make a vector of breaks 
     brks <- seq(startDate, endDate, by = "day")
     brks <- brks[-length(brks)]
-    brksLong <- c(brks, brks[length(brks)] + timeStep)
+    brksLong <- c(brks, brks[length(brks)] + 1)
     
     # Create an empty matrix of dim sites x time periods
     occ <-
@@ -62,9 +63,7 @@ calcOcc <-
       paste0(species, " done!")
       species_name <- gsub(" ", "", species)
       row.names(occ) <- brksLong
-      if (!file.exists(here::here("matrices_out", paste0(species_name, "_tt_effort.csv")))) {
-        write.csv(occ, here::here("matrices_out", paste0(species_name, "_tt_effort.csv")))
-      }
+      write.csv(occ, here::here("matrices_out", paste0(species_name, "_tt_effort.csv")))
       
     }
     return(occ)
